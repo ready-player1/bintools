@@ -1,0 +1,45 @@
+#!/bin/bash
+#
+# Simple x86/x64 Assembler
+#
+# Copyright (c) 2021 Masahiro Oono
+# Released under the MIT License.
+# https://opensource.org/licenses/mit-license.php
+#
+# This tool is based on the code of the as_dump
+# written in 2019 by Yuma Ohgami.
+# https://git.io/JERuB
+#
+
+# set -uex
+set -ue
+
+trap '[[ -d $work_dir ]] && rm -r $work_dir' EXIT
+work_dir=$(mktemp -d)
+
+arch=64
+file=
+opt=
+while getopts :a:f: opt
+do
+  case $opt in
+    a )
+      arch="$OPTARG"
+      ;;
+    f )
+      file="$OPTARG"
+      ;;
+    h | \? )
+      echo "Usage: $(basename $0) [-a {32|64}] [-f asmfile...]"
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [[ $file = "" && $# -gt 0 ]]; then
+  echo $* | as --${arch} -o ${work_dir}/a.out
+else
+  as --${arch} -o ${work_dir}/a.out ${file}
+fi
+objdump -d ${work_dir}/a.out
