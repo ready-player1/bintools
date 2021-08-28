@@ -1,0 +1,49 @@
+#!/bin/bash
+#
+# Simple x86/x64 Disassembler
+#
+# Copyright (c) 2021 Masahiro Oono
+# Released under the MIT License.
+# https://opensource.org/licenses/mit-license.php
+#
+# This tool is based on the code of the das_dump
+# written in 2019 by Yuma Ohgami.
+# https://git.io/JERzy
+#
+
+# set -uex
+set -ue
+
+trap '[[ -d $work_dir ]] && rm -r $work_dir' EXIT
+work_dir=$(mktemp -d)
+
+arch=i386:x86-64
+file=
+opt=
+while getopts :a:f: opt
+do
+  case $opt in
+    a )
+      [[ $OPTARG = 32 ]] && arch=i386
+      ;;
+    f )
+      file="$OPTARG"
+      ;;
+    h | \? )
+      echo "Usage: $(basename $0) [-a {32|64}] [-f file...]"
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [[ $file = "" ]]; then
+  if [[ $* = "" ]]; then loop='while read b'; else loop='for b in $*'; fi
+  eval $loop'
+  do
+    printf "\x${b}" >> $work_dir/a.bin
+  done'
+  objdump -b binary -m ${arch} -D ${work_dir}/a.bin
+else
+  objdump -b binary -m ${arch} -D ${file}
+fi
